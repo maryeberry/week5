@@ -9,6 +9,7 @@
     <h1>My Wishlist</h1>
 
     <ul id="wishlist"></ul>
+    <p id="empty-msg" hidden>Your wishlist is empty.</p>
 
     <form id="add-form">
       <h2>Add an Item</h2>
@@ -21,8 +22,8 @@
         <input type="url" id="input-url" required />
       </label>
       <label>
-        Image URL:
-        <input type="url" id="input-image" required />
+        Image URL (optional):
+        <input type="url" id="input-image" />
       </label>
       <label>
         Price:
@@ -48,17 +49,46 @@
 
       function render() {
         const list = document.getElementById("wishlist");
+        const emptyMsg = document.getElementById("empty-msg");
         list.innerHTML = "";
+
+        if (items.length === 0) {
+          emptyMsg.hidden = false;
+          return;
+        }
+        emptyMsg.hidden = true;
 
         items.forEach(function (item, index) {
           const li = document.createElement("li");
-          li.innerHTML = `
-            <img src="${item.image}" alt="${item.name}" width="80" />
-            <a href="${item.url}" target="_blank">${item.name}</a>
-            <span>Price: $${item.price}</span>
-            <span>Qty: ${item.quantity}</span>
-            <button data-index="${index}">Delete</button>
-          `;
+
+          if (item.image) {
+            const img = document.createElement("img");
+            img.src = item.image;
+            img.alt = item.name;
+            img.width = 80;
+            li.appendChild(img);
+          }
+
+          const a = document.createElement("a");
+          a.href = item.url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.textContent = item.name;
+          li.appendChild(a);
+
+          const priceSpan = document.createElement("span");
+          priceSpan.textContent = "Price: $" + item.price.toFixed(2);
+          li.appendChild(priceSpan);
+
+          const qtySpan = document.createElement("span");
+          qtySpan.textContent = "Qty: " + item.quantity;
+          li.appendChild(qtySpan);
+
+          const btn = document.createElement("button");
+          btn.textContent = "Delete";
+          btn.dataset.index = index;
+          li.appendChild(btn);
+
           list.appendChild(li);
         });
       }
@@ -79,8 +109,24 @@
         const name  = document.getElementById("input-name").value.trim();
         const url   = document.getElementById("input-url").value.trim();
         const image = document.getElementById("input-image").value.trim();
-        const price = parseFloat(document.getElementById("input-price").value);
-        const quantity = parseInt(document.getElementById("input-qty").value, 10);
+
+        const priceInput = document.getElementById("input-price");
+        const price = parseFloat(priceInput.value);
+        if (isNaN(price) || price < 0) {
+          priceInput.setCustomValidity("Please enter a valid price (numbers only, 0 or greater).");
+          priceInput.reportValidity();
+          return;
+        }
+        priceInput.setCustomValidity("");
+
+        const qtyInput = document.getElementById("input-qty");
+        const quantity = parseInt(qtyInput.value, 10);
+        if (isNaN(quantity) || quantity < 1) {
+          qtyInput.setCustomValidity("Quantity must be at least 1.");
+          qtyInput.reportValidity();
+          return;
+        }
+        qtyInput.setCustomValidity("");
 
         items.push({ name, url, image, price, quantity });
         render();
