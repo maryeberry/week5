@@ -78,10 +78,11 @@
       /* Remove spinners — Firefox; render as plain text field */
       #wishlist input[type="number"] {
         -moz-appearance: textfield;
-        width: 55px;
+        width: 72px;
         border: none;
         border-bottom: 1px solid #aaaaaa;
         background: transparent;
+        font-family: inherit;
         font-size: 0.875rem;
         color: #595959;
         padding: 1px 2px;
@@ -90,6 +91,14 @@
       #wishlist input[type="number"]:focus {
         outline: 2px solid #0055a5;
         outline-offset: 2px;
+      }
+
+      /* Product thumbnail — fixed height so tall images don't distort the row */
+      #wishlist img {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        flex-shrink: 0;
       }
 
       /* Purchased rows */
@@ -149,6 +158,7 @@
         max-width: 320px;
         padding: 0.3rem 0.5rem;
         border: 1px solid #cccccc;
+        font-family: inherit;
         font-size: 1rem;
         color: #1a1a1a;
       }
@@ -164,6 +174,7 @@
         background: #1a1a1a;
         color: #ffffff;
         border: none;
+        font-family: inherit;
         font-size: 1rem;
         cursor: pointer;
       }
@@ -201,7 +212,7 @@
       </label>
       <label>
         Image URL (optional):
-        <input type="url" id="input-image" />
+        <input type="text" id="input-image" />
       </label>
       <label>
         Price:
@@ -251,6 +262,7 @@
           const saved = localStorage.getItem("wishlist");
           if (saved) {
             const parsed = JSON.parse(saved);
+            if (!Array.isArray(parsed)) return [...DEFAULT_ITEMS];
             // Sanitize: coerce fields to their expected types in case localStorage was corrupted
             return parsed.map(function (item) {
               const price = Math.round(Number(item.price) * 100) / 100;
@@ -259,7 +271,7 @@
               return { ...item, price: isNaN(price) ? 0 : price, quantity, purchased };
             }).filter(function (item) {
               // Drop items missing any required field — simple presence check only
-              return item.name && item.url && !isNaN(item.price) && item.quantity >= 1;
+              return item.name && item.url && item.price >= 0 && item.quantity >= 1;
             });
           }
         } catch {
@@ -392,6 +404,7 @@
       document.getElementById("wishlist").addEventListener("click", function (event) {
         if (event.target.tagName === "BUTTON") {
           const index = parseInt(event.target.dataset.index, 10);
+          if (isNaN(index) || index < 0 || index >= items.length) return;
           items.splice(index, 1);
           save();
           render();
@@ -407,7 +420,7 @@
         const el = event.target;
         if (el.tagName !== "INPUT") return;
         const index = parseInt(el.dataset.index, 10);
-        if (isNaN(index)) return;
+        if (isNaN(index) || index < 0 || index >= items.length) return;
 
         if (el.dataset.field === "price") {
           const val = Math.round(parseFloat(el.value) * 100) / 100;
@@ -452,11 +465,6 @@
         const imageInput = document.getElementById("input-image");
         const priceInput = document.getElementById("input-price");
         const qtyInput   = document.getElementById("input-qty");
-
-        // Clear any stale error messages from a previous submission
-        [nameInput, urlInput, imageInput, priceInput, qtyInput].forEach(function (el) {
-          el.setCustomValidity("");
-        });
 
         const name  = nameInput.value.trim();
         const url   = urlInput.value.trim();
