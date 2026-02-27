@@ -45,6 +45,26 @@
     </form>
 
     <script>
+      // --- Validation helpers ---
+
+      function isValidUrl(str) {
+        try {
+          const url = new URL(str);
+          return url.protocol === "http:" || url.protocol === "https:";
+        } catch {
+          return false;
+        }
+      }
+
+      // Product names: must start with a letter or digit, allow letters, digits,
+      // spaces, and common punctuation ( - ' ( ) , & . ! )
+      const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9\s\-'(),&.!]*$/;
+
+      // Price: one or more digits, optionally followed by a dot and 1–2 digits
+      const PRICE_PATTERN = /^\d+(\.\d{1,2})?$/;
+
+      // --- localStorage helpers ---
+
       const DEFAULT_ITEMS = [
         {
           name: "Kindle Paperwhite",
@@ -55,12 +75,27 @@
         },
       ];
 
-      const saved = localStorage.getItem("wishlist");
-      const items = saved ? JSON.parse(saved) : DEFAULT_ITEMS;
+      function loadItems() {
+        try {
+          const saved = localStorage.getItem("wishlist");
+          if (saved) return JSON.parse(saved);
+        } catch {
+          // localStorage unavailable or data was corrupted
+        }
+        return [...DEFAULT_ITEMS];
+      }
 
       function save() {
-        localStorage.setItem("wishlist", JSON.stringify(items));
+        try {
+          localStorage.setItem("wishlist", JSON.stringify(items));
+        } catch {
+          // localStorage unavailable, silently skip
+        }
       }
+
+      const items = loadItems();
+
+      // --- Render ---
 
       function render() {
         const list = document.getElementById("wishlist");
@@ -81,6 +116,7 @@
             img.src = item.image;
             img.alt = item.name;
             img.width = 80;
+            img.onerror = function () { this.hidden = true; };
             li.appendChild(img);
           }
 
@@ -110,6 +146,8 @@
 
       render();
 
+      // --- Delete ---
+
       document.getElementById("wishlist").addEventListener("click", function (event) {
         if (event.target.tagName === "BUTTON") {
           const index = parseInt(event.target.dataset.index, 10);
@@ -119,30 +157,60 @@
         }
       });
 
+      // --- Add item ---
+
       document.getElementById("add-form").addEventListener("submit", function (event) {
         event.preventDefault();
 
-        const name  = document.getElementById("input-name").value.trim();
-        const url   = document.getElementById("input-url").value.trim();
-        const image = document.getElementById("input-image").value.trim();
-
+        const nameInput  = document.getElementById("input-name");
+        const urlInput   = document.getElementById("input-url");
+        const imageInput = document.getElementById("input-image");
         const priceInput = document.getElementById("input-price");
-        const price = parseFloat(priceInput.value);
-        if (isNaN(price) || price < 0) {
-          priceInput.setCustomValidity("Please enter a valid price (numbers only, 0 or greater).");
+        const qtyInput   = document.getElementById("input-qty");
+
+        // Clear any stale error messages from a previous submission
+        [nameInput, urlInput, imageInput, priceInput, qtyInput].forEach(function (el) {
+          el.setCustomValidity("");
+        });
+
+        const name  = nameInput.value.trim();
+        const url   = urlInput.value.trim();
+        const image = imageInput.value.trim();
+
+        if (!NAME_PATTERN.test(name)) {
+          nameInput.setCustomValidity(
+            "Name must start with a letter or number and contain only standard characters."
+          );
+          nameInput.reportValidity();
+          return;
+        }
+
+        if (!isValidUrl(url)) {
+          urlInput.setCustomValidity("Please enter a valid URL starting with http:// or https://");
+          urlInput.reportValidity();
+          return;
+        }
+
+        if (image && !isValidUrl(image)) {
+          imageInput.setCustomValidity("Please enter a valid image URL starting with http:// or https://");
+          imageInput.reportValidity();
+          return;
+        }
+
+        const priceStr = priceInput.value.trim();
+        if (!PRICE_PATTERN.test(priceStr)) {
+          priceInput.setCustomValidity("Price must be a number with up to 2 decimal places (e.g. 9.99).");
           priceInput.reportValidity();
           return;
         }
-        priceInput.setCustomValidity("");
+        const price = parseFloat(priceStr);
 
-        const qtyInput = document.getElementById("input-qty");
         const quantity = parseInt(qtyInput.value, 10);
         if (isNaN(quantity) || quantity < 1) {
           qtyInput.setCustomValidity("Quantity must be at least 1.");
           qtyInput.reportValidity();
           return;
         }
-        qtyInput.setCustomValidity("");
 
         items.push({ name, url, image, price, quantity });
         save();
