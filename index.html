@@ -50,19 +50,28 @@
         const list = document.getElementById("wishlist");
         list.innerHTML = "";
 
-        items.forEach(function (item) {
+        items.forEach(function (item, index) {
           const li = document.createElement("li");
           li.innerHTML = `
             <img src="${item.image}" alt="${item.name}" width="80" />
             <a href="${item.url}" target="_blank">${item.name}</a>
             <span>Price: $${item.price}</span>
             <span>Qty: ${item.quantity}</span>
+            <button data-index="${index}">Delete</button>
           `;
           list.appendChild(li);
         });
       }
 
       render();
+
+      document.getElementById("wishlist").addEventListener("click", function (event) {
+        if (event.target.tagName === "BUTTON") {
+          const index = parseInt(event.target.dataset.index, 10);
+          items.splice(index, 1);
+          render();
+        }
+      });
 
       document.getElementById("add-form").addEventListener("submit", function (event) {
         event.preventDefault();
