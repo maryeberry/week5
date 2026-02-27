@@ -21,6 +21,18 @@
       #wishlist li.purchased a {
         text-decoration: line-through;
       }
+      /* Hide text visually but keep it readable by screen readers */
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
     </style>
   </head>
   <body>
@@ -98,6 +110,9 @@
               const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
               const purchased = item.purchased === true;
               return { ...item, price: isNaN(price) ? 0 : price, quantity, purchased };
+            }).filter(function (item) {
+              // Drop items missing any required field — simple presence check only
+              return item.name && item.url && !isNaN(item.price) && item.quantity >= 1;
             });
           }
         } catch {
@@ -127,9 +142,20 @@
           if (item.purchased) return sum;
           return sum + Math.round(item.price * 100) * item.quantity;
         }, 0);
-        const label = anyPurchased ? "Remaining" : "Total";
+
+        let label;
+        if (!anyPurchased) {
+          label = "Total";
+        } else if (totalCents === 0) {
+          label = "All purchased — $0.00 remaining";
+        } else {
+          label = "Remaining";
+        }
+
         document.getElementById("total").textContent =
-          label + ": $" + (totalCents / 100).toFixed(2);
+          totalCents === 0 && anyPurchased
+            ? label
+            : label + ": $" + (totalCents / 100).toFixed(2);
       }
 
       // --- Render ---
@@ -152,13 +178,16 @@
 
           // Purchased checkbox — comes first so it's easy to reach
           const purchasedLabel = document.createElement("label");
-          purchasedLabel.title = "Mark as purchased";
           const checkbox = document.createElement("input");
           checkbox.type = "checkbox";
           checkbox.checked = item.purchased;
           checkbox.dataset.index = index;
           checkbox.dataset.field = "purchased";
+          const checkboxText = document.createElement("span");
+          checkboxText.className = "visually-hidden";
+          checkboxText.textContent = "Purchased";
           purchasedLabel.appendChild(checkbox);
+          purchasedLabel.appendChild(checkboxText);
           li.appendChild(purchasedLabel);
 
           if (item.image) {
