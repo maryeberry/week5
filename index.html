@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Wishlist</title>
+    <style>
+      #wishlist li {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+    </style>
   </head>
   <body>
     <h1>My Wishlist</h1>
@@ -37,7 +45,7 @@
     </form>
 
     <script>
-      const items = [
+      const DEFAULT_ITEMS = [
         {
           name: "Kindle Paperwhite",
           url: "https://www.amazon.com/dp/B08KTZ8249",
@@ -46,6 +54,13 @@
           quantity: 1,
         },
       ];
+
+      const saved = localStorage.getItem("wishlist");
+      const items = saved ? JSON.parse(saved) : DEFAULT_ITEMS;
+
+      function save() {
+        localStorage.setItem("wishlist", JSON.stringify(items));
+      }
 
       function render() {
         const list = document.getElementById("wishlist");
@@ -99,6 +114,7 @@
         if (event.target.tagName === "BUTTON") {
           const index = parseInt(event.target.dataset.index, 10);
           items.splice(index, 1);
+          save();
           render();
         }
       });
@@ -129,6 +145,7 @@
         qtyInput.setCustomValidity("");
 
         items.push({ name, url, image, price, quantity });
+        save();
         render();
 
         event.target.reset();
