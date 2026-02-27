@@ -11,6 +11,9 @@
         gap: 12px;
         margin-bottom: 8px;
       }
+      #wishlist input[type="number"] {
+        width: 70px;
+      }
     </style>
   </head>
   <body>
@@ -18,7 +21,7 @@
 
     <ul id="wishlist"></ul>
     <p id="empty-msg" hidden>Your wishlist is empty.</p>
-    <p id="total" hidden></p>
+    <p id="total"></p>
 
     <form id="add-form">
       <h2>Add an Item</h2>
@@ -79,7 +82,15 @@
       function loadItems() {
         try {
           const saved = localStorage.getItem("wishlist");
-          if (saved) return JSON.parse(saved);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            // Sanitize: coerce price/quantity to numbers in case localStorage was corrupted
+            return parsed.map(function (item) {
+              const price = Math.round(Number(item.price) * 100) / 100;
+              const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
+              return { ...item, price: isNaN(price) ? 0 : price, quantity };
+            });
+          }
         } catch {
           // localStorage unavailable or data was corrupted
         }
@@ -96,26 +107,30 @@
 
       const items = loadItems();
 
+      // --- Total ---
+      // Computes in integer cents to avoid floating-point drift (e.g. 0.1 + 0.2 = 0.30000000000000004)
+
+      function updateTotal() {
+        const totalCents = items.reduce(function (sum, item) {
+          return sum + Math.round(item.price * 100) * item.quantity;
+        }, 0);
+        document.getElementById("total").textContent =
+          "Total: $" + (totalCents / 100).toFixed(2);
+      }
+
       // --- Render ---
 
       function render() {
         const list = document.getElementById("wishlist");
         const emptyMsg = document.getElementById("empty-msg");
-        const totalEl = document.getElementById("total");
         list.innerHTML = "";
+        updateTotal();
 
         if (items.length === 0) {
           emptyMsg.hidden = false;
-          totalEl.hidden = true;
           return;
         }
         emptyMsg.hidden = true;
-
-        const total = items.reduce(function (sum, item) {
-          return sum + item.price * item.quantity;
-        }, 0);
-        totalEl.textContent = "Total: $" + total.toFixed(2);
-        totalEl.hidden = false;
 
         items.forEach(function (item, index) {
           const li = document.createElement("li");
@@ -136,13 +151,28 @@
           a.textContent = item.name;
           li.appendChild(a);
 
-          const priceSpan = document.createElement("span");
-          priceSpan.textContent = "Price: $" + item.price.toFixed(2);
-          li.appendChild(priceSpan);
+          const priceLabel = document.createElement("label");
+          priceLabel.textContent = "Price: $";
+          const priceInput = document.createElement("input");
+          priceInput.type = "number";
+          priceInput.min = "0";
+          priceInput.step = "0.01";
+          priceInput.value = item.price.toFixed(2);
+          priceInput.dataset.index = index;
+          priceInput.dataset.field = "price";
+          priceLabel.appendChild(priceInput);
+          li.appendChild(priceLabel);
 
-          const qtySpan = document.createElement("span");
-          qtySpan.textContent = "Qty: " + item.quantity;
-          li.appendChild(qtySpan);
+          const qtyLabel = document.createElement("label");
+          qtyLabel.textContent = "Qty: ";
+          const qtyInput = document.createElement("input");
+          qtyInput.type = "number";
+          qtyInput.min = "1";
+          qtyInput.value = item.quantity;
+          qtyInput.dataset.index = index;
+          qtyInput.dataset.field = "quantity";
+          qtyLabel.appendChild(qtyInput);
+          li.appendChild(qtyLabel);
 
           const btn = document.createElement("button");
           btn.textContent = "Delete";
@@ -164,6 +194,37 @@
           save();
           render();
         }
+      });
+
+      // --- Inline edit (price / qty) ---
+      // Uses "change" (fires on blur/Enter) rather than "input" to avoid saving on every keystroke.
+      // Does NOT call render() — that would destroy the focused input — only updates the total.
+
+      document.getElementById("wishlist").addEventListener("change", function (event) {
+        const el = event.target;
+        if (el.tagName !== "INPUT") return;
+        const index = parseInt(el.dataset.index, 10);
+        if (isNaN(index)) return;
+
+        if (el.dataset.field === "price") {
+          const val = Math.round(parseFloat(el.value) * 100) / 100;
+          if (isNaN(val) || val < 0) {
+            el.value = items[index].price.toFixed(2); // revert bad input
+            return;
+          }
+          items[index].price = val;
+          el.value = val.toFixed(2); // normalise display (e.g. "1" → "1.00")
+        } else if (el.dataset.field === "quantity") {
+          const val = parseInt(el.value, 10);
+          if (isNaN(val) || val < 1) {
+            el.value = items[index].quantity; // revert bad input
+            return;
+          }
+          items[index].quantity = val;
+        }
+
+        save();
+        updateTotal();
       });
 
       // --- Add item ---
