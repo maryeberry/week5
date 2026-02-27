@@ -18,6 +18,7 @@
 
     <ul id="wishlist"></ul>
     <p id="empty-msg" hidden>Your wishlist is empty.</p>
+    <p id="total" hidden></p>
 
     <form id="add-form">
       <h2>Add an Item</h2>
@@ -100,13 +101,21 @@
       function render() {
         const list = document.getElementById("wishlist");
         const emptyMsg = document.getElementById("empty-msg");
+        const totalEl = document.getElementById("total");
         list.innerHTML = "";
 
         if (items.length === 0) {
           emptyMsg.hidden = false;
+          totalEl.hidden = true;
           return;
         }
         emptyMsg.hidden = true;
+
+        const total = items.reduce(function (sum, item) {
+          return sum + item.price * item.quantity;
+        }, 0);
+        totalEl.textContent = "Total: $" + total.toFixed(2);
+        totalEl.hidden = false;
 
         items.forEach(function (item, index) {
           const li = document.createElement("li");
