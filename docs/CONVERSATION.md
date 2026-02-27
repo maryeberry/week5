@@ -94,3 +94,27 @@ All 8 fixes committed and pushed. Here's a summary of what changed:
 | 9 | Image URL input changed from `type="url"` to `type="text"` — browser native URL validation no longer silently blocks submission |
 | 10 | Removed the redundant `setCustomValidity("")` cleanup loop at the top of the submit handler |
 | 11 | Filter changed from `!isNaN(item.price)` to `item.price >= 0` |
+
+---
+
+## User
+
+Save this entire conversation under "docs/CONVERSATION.md"
+
+---
+
+## Assistant
+
+Saved to `docs/CONVERSATION.md` and pushed. The file captures both turns: the full review with all 11 identified issues, and the summary of the 8 fixes that were applied.
+
+---
+
+## User
+
+No, this entire conversation is not saved properly to CONVERSATION.md, include every message in this chat until now. Push and commit this change to CONVERSATION.md
+
+---
+
+## Assistant
+
+Updated `docs/CONVERSATION.md` to include every message in the conversation from start to finish, then committed and pushed.
