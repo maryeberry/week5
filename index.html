@@ -14,6 +14,13 @@
       #wishlist input[type="number"] {
         width: 70px;
       }
+      /* Purchased rows: dim the whole row and strike through the product link */
+      #wishlist li.purchased {
+        opacity: 0.5;
+      }
+      #wishlist li.purchased a {
+        text-decoration: line-through;
+      }
     </style>
   </head>
   <body>
@@ -76,6 +83,7 @@
           image: "https://m.media-amazon.com/images/I/61pla6j-YQL._AC_SL1500_.jpg",
           price: 139.99,
           quantity: 1,
+          purchased: false,
         },
       ];
 
@@ -84,11 +92,12 @@
           const saved = localStorage.getItem("wishlist");
           if (saved) {
             const parsed = JSON.parse(saved);
-            // Sanitize: coerce price/quantity to numbers in case localStorage was corrupted
+            // Sanitize: coerce fields to their expected types in case localStorage was corrupted
             return parsed.map(function (item) {
               const price = Math.round(Number(item.price) * 100) / 100;
               const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
-              return { ...item, price: isNaN(price) ? 0 : price, quantity };
+              const purchased = item.purchased === true;
+              return { ...item, price: isNaN(price) ? 0 : price, quantity, purchased };
             });
           }
         } catch {
@@ -108,14 +117,19 @@
       const items = loadItems();
 
       // --- Total ---
-      // Computes in integer cents to avoid floating-point drift (e.g. 0.1 + 0.2 = 0.30000000000000004)
+      // Only counts unpurchased items — shows what's still left to buy.
+      // Computes in integer cents to avoid floating-point drift (e.g. 0.1 + 0.2 = 0.30000000000000004).
+      // Label switches to "Remaining" when at least one item is marked purchased.
 
       function updateTotal() {
+        const anyPurchased = items.some(function (item) { return item.purchased; });
         const totalCents = items.reduce(function (sum, item) {
+          if (item.purchased) return sum;
           return sum + Math.round(item.price * 100) * item.quantity;
         }, 0);
+        const label = anyPurchased ? "Remaining" : "Total";
         document.getElementById("total").textContent =
-          "Total: $" + (totalCents / 100).toFixed(2);
+          label + ": $" + (totalCents / 100).toFixed(2);
       }
 
       // --- Render ---
@@ -134,6 +148,18 @@
 
         items.forEach(function (item, index) {
           const li = document.createElement("li");
+          if (item.purchased) li.classList.add("purchased");
+
+          // Purchased checkbox — comes first so it's easy to reach
+          const purchasedLabel = document.createElement("label");
+          purchasedLabel.title = "Mark as purchased";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = item.purchased;
+          checkbox.dataset.index = index;
+          checkbox.dataset.field = "purchased";
+          purchasedLabel.appendChild(checkbox);
+          li.appendChild(purchasedLabel);
 
           if (item.image) {
             const img = document.createElement("img");
@@ -196,9 +222,10 @@
         }
       });
 
-      // --- Inline edit (price / qty) ---
+      // --- Inline edit (price / qty / purchased) ---
       // Uses "change" (fires on blur/Enter) rather than "input" to avoid saving on every keystroke.
-      // Does NOT call render() — that would destroy the focused input — only updates the total.
+      // Price and qty do NOT call render() — that would destroy the focused input.
+      // The purchased checkbox calls render() to immediately apply the visual strikethrough.
 
       document.getElementById("wishlist").addEventListener("change", function (event) {
         const el = event.target;
@@ -214,6 +241,8 @@
           }
           items[index].price = val;
           el.value = val.toFixed(2); // normalise display (e.g. "1" → "1.00")
+          save();
+          updateTotal();
         } else if (el.dataset.field === "quantity") {
           const val = parseInt(el.value, 10);
           if (isNaN(val) || val < 1) {
@@ -221,10 +250,13 @@
             return;
           }
           items[index].quantity = val;
+          save();
+          updateTotal();
+        } else if (el.dataset.field === "purchased") {
+          items[index].purchased = el.checked;
+          save();
+          render(); // re-render to apply/remove the strikethrough class
         }
-
-        save();
-        updateTotal();
       });
 
       // --- Add item ---
@@ -282,7 +314,7 @@
           return;
         }
 
-        items.push({ name, url, image, price, quantity });
+        items.push({ name, url, image, price, quantity, purchased: false });
         save();
         render();
 
