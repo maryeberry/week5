@@ -10,6 +10,31 @@
 
     <ul id="wishlist"></ul>
 
+    <form id="add-form">
+      <h2>Add an Item</h2>
+      <label>
+        Name:
+        <input type="text" id="input-name" required />
+      </label>
+      <label>
+        URL:
+        <input type="url" id="input-url" required />
+      </label>
+      <label>
+        Image URL:
+        <input type="url" id="input-image" required />
+      </label>
+      <label>
+        Price:
+        <input type="number" id="input-price" min="0" step="0.01" required />
+      </label>
+      <label>
+        Qty:
+        <input type="number" id="input-qty" min="1" value="1" required />
+      </label>
+      <button type="submit">Add to Wishlist</button>
+    </form>
+
     <script>
       const items = [
         {
@@ -38,6 +63,21 @@
       }
 
       render();
+
+      document.getElementById("add-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const name  = document.getElementById("input-name").value.trim();
+        const url   = document.getElementById("input-url").value.trim();
+        const image = document.getElementById("input-image").value.trim();
+        const price = parseFloat(document.getElementById("input-price").value);
+        const quantity = parseInt(document.getElementById("input-qty").value, 10);
+
+        items.push({ name, url, image, price, quantity });
+        render();
+
+        event.target.reset();
+      });
     </script>
   </body>
 </html>
