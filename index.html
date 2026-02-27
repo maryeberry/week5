@@ -8,17 +8,36 @@
   <body>
     <h1>My Wishlist</h1>
 
-    <ul>
-      <li>
-        <img
-          src="https://m.media-amazon.com/images/I/61pla6j-YQL._AC_SL1500_.jpg"
-          alt="Kindle Paperwhite"
-          width="80"
-        />
-        <a href="https://www.amazon.com/dp/B08KTZ8249" target="_blank">Kindle Paperwhite</a>
-        <span>Price: $139.99</span>
-        <span>Qty: 1</span>
-      </li>
-    </ul>
+    <ul id="wishlist"></ul>
+
+    <script>
+      const items = [
+        {
+          name: "Kindle Paperwhite",
+          url: "https://www.amazon.com/dp/B08KTZ8249",
+          image: "https://m.media-amazon.com/images/I/61pla6j-YQL._AC_SL1500_.jpg",
+          price: 139.99,
+          quantity: 1,
+        },
+      ];
+
+      function render() {
+        const list = document.getElementById("wishlist");
+        list.innerHTML = "";
+
+        items.forEach(function (item) {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <img src="${item.image}" alt="${item.name}" width="80" />
+            <a href="${item.url}" target="_blank">${item.name}</a>
+            <span>Price: $${item.price}</span>
+            <span>Qty: ${item.quantity}</span>
+          `;
+          list.appendChild(li);
+        });
+      }
+
+      render();
+    </script>
   </body>
 </html>
