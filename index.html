@@ -436,6 +436,13 @@
       });
 
       // --- Add item ---
+      // Clear any stale custom validity as soon as the user edits a field, so the
+      // browser doesn't block the next submit event before our handler can run.
+      document.getElementById("add-form").addEventListener("input", function (event) {
+        if (event.target.tagName === "INPUT") {
+          event.target.setCustomValidity("");
+        }
+      });
 
       document.getElementById("add-form").addEventListener("submit", function (event) {
         event.preventDefault();
