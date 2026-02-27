@@ -5,23 +5,170 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Wishlist</title>
     <style>
+      /* ── Base ─────────────────────────────────────────── */
+      *, *::before, *::after { box-sizing: border-box; }
+
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        color: #1a1a1a;
+        background: #ffffff;
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+      }
+
+      /* ── Page header ──────────────────────────────────── */
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0 0 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #1a1a1a;
+      }
+
+      /* ── Wishlist ─────────────────────────────────────── */
+      #wishlist {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
       #wishlist li {
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 8px;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #cccccc;
       }
+
+      /* Item name — prominent */
+      #wishlist a {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #0055a5;
+        text-decoration: none;
+      }
+
+      #wishlist a:focus {
+        outline: 2px solid #0055a5;
+        outline-offset: 2px;
+      }
+
+      /* Price and qty labels — secondary, smaller, muted */
+      #wishlist label {
+        font-size: 0.875rem;
+        color: #595959;
+      }
+
+      /* Purchased checkbox — slightly larger hit target */
+      #wishlist input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+      }
+
+      /* ── Inline number inputs (price / qty) ───────────── */
+      /* Remove spinners — WebKit/Blink */
+      #wishlist input[type="number"]::-webkit-outer-spin-button,
+      #wishlist input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      /* Remove spinners — Firefox; render as plain text field */
       #wishlist input[type="number"] {
-        width: 70px;
+        -moz-appearance: textfield;
+        width: 55px;
+        border: none;
+        border-bottom: 1px solid #aaaaaa;
+        background: transparent;
+        font-size: 0.875rem;
+        color: #595959;
+        padding: 1px 2px;
       }
-      /* Purchased rows: dim the whole row and strike through the product link */
+
+      #wishlist input[type="number"]:focus {
+        outline: 2px solid #0055a5;
+        outline-offset: 2px;
+      }
+
+      /* Purchased rows */
       #wishlist li.purchased {
         opacity: 0.5;
       }
+
       #wishlist li.purchased a {
         text-decoration: line-through;
       }
-      /* Hide text visually but keep it readable by screen readers */
+
+      /* ── Total / empty message ────────────────────────── */
+      #total {
+        font-weight: 600;
+        margin: 0.75rem 0 1.5rem;
+      }
+
+      #empty-msg {
+        color: #595959;
+        margin: 0.5rem 0 1.5rem;
+      }
+
+      /* ── Delete button ────────────────────────────────── */
+      #wishlist button {
+        margin-left: auto;
+        background: none;
+        border: 1px solid #c00000;
+        color: #c00000;
+        font-size: 0.8125rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+
+      /* ── Add-item form ────────────────────────────────── */
+      #add-form {
+        border-top: 2px solid #1a1a1a;
+        padding-top: 1.25rem;
+      }
+
+      #add-form h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0 0 0.75rem;
+      }
+
+      #add-form label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.9375rem;
+      }
+
+      #add-form input {
+        display: block;
+        margin-top: 0.25rem;
+        width: 100%;
+        max-width: 320px;
+        padding: 0.3rem 0.5rem;
+        border: 1px solid #cccccc;
+        font-size: 1rem;
+        color: #1a1a1a;
+      }
+
+      #add-form input:focus {
+        outline: 2px solid #0055a5;
+        outline-offset: 2px;
+      }
+
+      #add-form button[type="submit"] {
+        margin-top: 0.75rem;
+        padding: 0.45rem 1.25rem;
+        background: #1a1a1a;
+        color: #ffffff;
+        border: none;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      /* ── Accessibility ────────────────────────────────── */
       .visually-hidden {
         position: absolute;
         width: 1px;
